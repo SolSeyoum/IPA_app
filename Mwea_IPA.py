@@ -71,8 +71,8 @@ st.markdown("""
 #######################
 # Load data
 dfm = pd.read_csv(r'data/IPI_by_section_Mwea_Kenya.csv')
-shp_file = r'data\Mwea.json'
-with open(shp_file) as response:
+# shp_file = r'data\Mwea.json'
+with open(r'data\Mwea.json') as response:
     geo = json.load(response)
 # shdf = gpd.read_file(shp_file ,crs="EPSG:32737")
 # shdf.columns = [x.replace('_', ' ') for x in shdf.columns]
