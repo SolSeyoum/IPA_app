@@ -4,7 +4,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import plotly.express as px
-import geopandas as gpd
+import plotly.graph_objects as go
+import json
 from PIL import Image
 #######################
 # Page configuration
@@ -71,8 +72,10 @@ st.markdown("""
 # Load data
 dfm = pd.read_csv(r'data/IPI_by_section_Mwea_Kenya.csv')
 shp_file = r'data\Mwea.json'
-shdf = gpd.read_file(shp_file ,crs="EPSG:32737")
-shdf.columns = [x.replace('_', ' ') for x in shdf.columns]
+with open(shp_file) as response:
+    geo = json.load(response)
+# shdf = gpd.read_file(shp_file ,crs="EPSG:32737")
+# shdf.columns = [x.replace('_', ' ') for x in shdf.columns]
 dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
 logo_path = r'data\logo.png'
 
@@ -131,14 +134,47 @@ with st.sidebar:
 
 # Plots
 
-def get_merged_df(dft, shdf):
-    df_merged  = shdf.merge(dft, on='section name', how='left')
-    gdf = gpd.GeoDataFrame(df_merged)
-    return gdf
+# def get_merged_df(dft, shdf):
+#     df_merged  = shdf.merge(dft, on='section name', how='left')
+#     gdf = gpd.GeoDataFrame(df_merged)
+#     return gdf
 
-gdf = get_merged_df(df_selected_sorted, shdf)
+# gdf = get_merged_df(df_selected_sorted, shdf)
 
 # Choropleth map
+def make_Choroplethmapbox(geodata, df_selected, year, unit ):
+    # Geographic Map
+    col_name = df_selected.columns[1]
+    
+    fig = go.Figure(
+        go.Choroplethmapbox(
+            geojson=geodata,
+            locations=df_selected['section name'],
+            featureidkey="properties.section_name",
+            z=df_selected[col_name],
+            colorscale="Viridis",
+            colorbar=dict(title=f'{col_name} [{unit}]', title_side="right",  x= 0.95, thickness=12,
+                        ),
+
+        )
+    )
+
+    fig.update_layout(
+        template='plotly_dark',
+        mapbox_style="carto-darkmatter",
+        mapbox_zoom=10.5,
+        mapbox_center={"lat": -0.69306, "lon":  37.35908},
+        width=400,
+        height=400,
+        title=f"Mapa of {col_name} for year {year}",
+    )
+
+    fig.update_layout(margin={"r": 0, "t": 30, "l": 0, "b": 0})
+    fig.update_layout(geo_bgcolor='rgba(0,0,0,0)')
+    # fig.show()
+    return fig
+
+
 
 def make_choropleth(input_df, unit, name, year, input_color_theme):
 
@@ -286,9 +322,12 @@ with col[0]:
        'relative water deficit': '-', 'total seasonal biomass production': 'ton',
        'seasonal yield': 'ton/ha', 'crop water productivity': 'kg/m^3'}
 
-    gdf = get_merged_df(df_selected, shdf)
-    gdf = gdf.drop(columns=["index"])
-    choropleth = make_choropleth(gdf, units[selected_indicator],  selected_indicator, selected_year, "Viridis")
+    # gdf = get_merged_df(df_selected, shdf)
+    # gdf = gdf.drop(columns=["index"])
+    # choropleth = make_choropleth(gdf, units[selected_indicator],  selected_indicator, selected_year, "Viridis")
+
+
+    choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
 
     # choropleth = make_choropleth(df_selected_year, 'states_code', 'population', selected_color_theme)
     st.plotly_chart(choropleth, use_container_width=True)
