@@ -72,12 +72,12 @@ st.markdown("""
 # Load data
 dfm = pd.read_csv(r'data/IPI_by_section_Mwea_Kenya.csv')
 # shp_file = r'data\Mwea.json'
-with open(r'data\Mwea.json') as response:
+with open(r'data/Mwea.json') as response:
     geo = json.load(response)
 # shdf = gpd.read_file(shp_file ,crs="EPSG:32737")
 # shdf.columns = [x.replace('_', ' ') for x in shdf.columns]
 dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
-logo_path = r'data\logo.png'
+logo_path = r'data/logo.png'
 
 IPA_description = {
      "beneficial fraction": "beneficial fraction (BF) is a measure of efficiency and calculated as the ratio of sum of transpiration to evapotranspiration.",
