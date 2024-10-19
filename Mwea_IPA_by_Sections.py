@@ -63,6 +63,10 @@ st.markdown("""
     transform: translateX(-50%);
 }
 
+img[data-testid="stLogo"] {
+            height: 4.5rem;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
