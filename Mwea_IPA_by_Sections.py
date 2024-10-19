@@ -77,8 +77,8 @@ with open(r'data\Mwea.json') as response:
     geo = json.load(response)
 
 dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
-logo_wide = r'data/logo_wide.png'
-logo_small = r'data/logo_small.png'
+logo_wide = r'data\logo_wide.png'
+logo_small = r'data\logo_small.png'
 
 IPA_description = {
      "beneficial fraction": "beneficial fraction (BF) is a measure of efficiency and calculated as the ratio of sum of transpiration to evapotranspiration.",
