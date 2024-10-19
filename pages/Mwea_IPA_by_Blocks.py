@@ -17,7 +17,6 @@ st.set_page_config(
 
 alt.themes.enable("dark")
 
-
 #######################
 # CSS styling
 st.markdown("""
@@ -37,7 +36,7 @@ st.markdown("""
 }
 
 [data-testid="stMetric"] {
-    background-color: #393939;
+    background-color: #1c1b1b;
     text-align: center;
     padding: 2px 0;
 }
@@ -63,21 +62,22 @@ st.markdown("""
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
 }
+            
+img[data-testid="stLogo"] {
+            height: 4.5rem;
+}
 
 </style>
 """, unsafe_allow_html=True)
 
-
 #######################
 # Load data
 dfm = pd.read_csv(r'data/IPI_by_section_and_blocks_Mwea_Kenya.csv')
-# shp_file = r'data\Mwea.json'
-with open(r'data/Mwea_blocks.json') as response:
+with open(r'data\Mwea_blocks.json') as response:
     geo = json.load(response)
-# shdf = gpd.read_file(shp_file ,crs="EPSG:32737")
-# shdf.columns = [x.replace('_', ' ') for x in shdf.columns]
 dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
-logo_path = r'data/logo.png'
+logo_wide = r'data/logo_wide.png'
+logo_small = r'data/logo_small.png'
 
 IPA_description = {
      "beneficial fraction": "beneficial fraction (BF) is a measure of efficiency and calculated as the ratio of sum of transpiration to evapotranspiration.",
@@ -106,89 +106,83 @@ def load_image(image_name: str) -> Image:
 #######################
 # Sidebar
 with st.sidebar:
-
-    st.sidebar.image(load_image(logo_path), use_column_width=True)
+   
+    # st.sidebar.image(load_image(logo_path), use_column_width=True)
+    st.logo(load_image(logo_wide), size="large", link='https://www.un-ihe.org/', icon_image=load_image(logo_small))
     st.title('Mwea Irrigation Performance Indicators')
-
-    
+   
     year_list = list(dfm.year.unique())[::-1]
     indicator_list = list(dfm.columns.unique())[1:-2][::-1]
-    # indicator_list = [l.replace('_',' ') for l in indicator_list]
     
     selected_year = st.selectbox('Select a year', year_list)
 
     selected_indicator = st.selectbox('Select an indicator', indicator_list)
-
-    # if (selected_indicator == 'crop water productivity'):
     st.write(IPA_description[selected_indicator])
    
-
-    # selected_indicator = selected_indicator.replace(' ', '_')
-
-    # df_selected = dfm[dfm.year == selected_year][['section name', selected_indicator]]
     df_selected = dfm[dfm.year == selected_year][['section name', selected_indicator, "block"]]
     df_selected_sorted = df_selected.sort_values(by=selected_indicator, ascending=False)
-
-    # color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
-    # selected_color_theme = st.selectbox('Select a color theme', color_theme_list)
-
 
 #######################
 
 # Plots
 
-# def get_merged_df(dft, shdf):
-#     df_merged  = shdf.merge(dft, on='section name', how='left')
-#     gdf = gpd.GeoDataFrame(df_merged)
-#     return gdf
-
-# gdf = get_merged_df(df_selected_sorted, shdf)
-
 # Choropleth map
-def make_Choroplethmapbox(geodata, df_selected, year, unit ):
+def make_Choroplethmapbox(geo, df, year, unit ):
     # Geographic Map
-    col_name = df_selected.columns[1]
-    
-    fig = go.Figure(
-        go.Choroplethmapbox(
-            geojson=geodata,
-            locations=df_selected['block'],
-            featureidkey="properties.block",
-            z=df_selected[col_name],
-            colorscale="Viridis",
-            colorbar=dict(title=f'{col_name} [{unit}]', title_side="right",  x= 0.95, thickness=12,
-                        ),
-
-        )
-    )
-
+    col_name = df.columns[1]
+    df['indicator'] = col_name
+    fig = px.choropleth_mapbox(df,  # dataframe to plothangi veri seti
+                                geojson=geo,  # the geolocation
+                                locations=df['block'],
+                                featureidkey="properties.block",
+                                color=col_name,  
+                                color_continuous_scale="Viridis",  #
+                                range_color=(df[col_name].min(),
+                                            df[col_name].max()),
+                                
+                                center={"lat": -0.69306, "lon":  37.35908},
+                                mapbox_style="carto-darkmatter",  # mapbox style
+                                template='plotly_dark',
+                                zoom=10.7,  # zoom level
+                                opacity=0.9,  # opacity
+                                custom_data=[df['section name'],
+                                            df[col_name], 
+                                            df['block'],
+                                            df['indicator']] ,
+                                width=600, height=400,
+                                )
+    fig.update_layout(title=f"Mapa of {col_name} for year {year}",
+                        # title_x=0.5  # Title position
+                        )
+    # colrbar configuration
     fig.update_layout(
-        template='plotly_dark',
-        mapbox_style="carto-darkmatter",
-        mapbox_zoom=10.5,
-        mapbox_center={"lat": -0.69306, "lon":  37.35908},
-        width=400,
-        height=400,
-        title=f"Mapa of {col_name} for year {year}",
-    )
-
-    fig.update_layout(margin={"r": 0, "t": 30, "l": 0, "b": 0})
-    fig.update_layout(geo_bgcolor='rgba(0,0,0,0)')
+                        # coloraxis_colorbar_x=0.95,
+                        coloraxis_colorbar_title=f'{col_name} [{unit}]', 
+                        coloraxis_colorbar_title_side="right",
+                        coloraxis_colorbar_thickness=15,
+                    )
+    # hver template
+    hovertemp = '<i style="color:white;">Section:</i><b> %{customdata[0]}</b><br>'
+    hovertemp += '<i>Block:</i><b> %{customdata[2]}</b><br>'
+    hovertemp += "%{customdata[3]}: %{customdata[1]:,.2f}<br>"
+    fig.update_traces(hovertemplate=hovertemp)
+    fig.update_layout(margin={"r":0, "l":0, "b":0})
     # fig.show()
     return fig
-
-
+  
 # histogram plot
-def make_lat_chart(df, indicator, section):
+def make_alt_chart(df, indicator, section):
     title = alt.TitleParams(f'Yearly {indicator} by block for {section}', anchor='middle')
     chart = alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X('block:N', axis=None),
         y=f'{indicator}:Q',
         color='block:N',
         column='year:N'
-    ).properties(width=100, height=120)
+    ).properties(width=100, height=120).configure_legend(
+        orient='bottom',
+        columns=15
+    )
     return chart
-
 
 
 def format_number(num):
@@ -241,26 +235,14 @@ with col[0]:
        'seasonal yield': 'ton/ha', 'crop water productivity': 'kg/m^3'}
 
     choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
-    # choropleth = make_choropleth(df_selected_year, 'states_code', 'population', selected_color_theme)
     st.plotly_chart(choropleth, use_container_width=True)
 
 
     dfm_var = dfm[['year', selected_indicator,'section name', 'block']]
     for section in dfm_var['section name'].unique():
         df_section = dfm_var.loc[dfm_var['section name'] == section]
-        chart = make_lat_chart(df_section, selected_indicator, section)
+        chart = make_alt_chart(df_section, selected_indicator, section)
         st.altair_chart(chart, use_container_width=False)
-
-    # dfm_var = dfm[['year', selected_indicator,'section name']]
-    # dfm_var = dfm_var.pivot(index='year', columns='section name', values=selected_indicator)
-
-    # dfm_var = dfm[['year', selected_indicator,'section name']]
-    
-    # bar_chart = make_barchart(dfm_var, selected_indicator)
-    # # bar_chart = plot_df(dfm_var, selected_indicator)
-    
-    # # heatmap = make_heatmap(dfm, 'year', 'states', 'population', selected_color_theme)
-    # st.altair_chart(bar_chart, use_container_width=False)
     
 
 with col[2]:
