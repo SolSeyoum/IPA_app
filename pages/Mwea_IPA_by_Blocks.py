@@ -73,11 +73,11 @@ img[data-testid="stLogo"] {
 #######################
 # Load data
 dfm = pd.read_csv(r'data/IPI_by_section_and_blocks_Mwea_Kenya.csv')
-with open(r'data\Mwea_blocks.json') as response:
+with open(r'data/Mwea_blocks.json') as response:
     geo = json.load(response)
 dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
-logo_wide = r'data\logo_wide.png'
-logo_small = r'data\logo_small.png'
+logo_wide = r'data/logo_wide.png'
+logo_small = r'data/logo_small.png'
 
 IPA_description = {
      "beneficial fraction": "beneficial fraction (BF) is a measure of efficiency and calculated as the ratio of sum of transpiration to evapotranspiration.",
