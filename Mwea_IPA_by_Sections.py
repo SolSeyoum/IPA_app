@@ -177,7 +177,8 @@ def make_Choroplethmapbox(geo, df, year, unit ):
 
 # histogram plot
 def maek_barchart(df,col):
-    title = alt.TitleParams(f'Yearly {selected_indicator} by section', anchor='middle')
+    title = alt.TitleParams(f'Average {selected_indicator} per section for years'
+                            f' {df.year.iloc[0]} to {df.year.iloc[-1]}', anchor='start')
     barchart = alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X('section name:N', axis=None),
         y=f'{col}:Q',
@@ -241,6 +242,7 @@ with col[0]:
     choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
     st.plotly_chart(choropleth, use_container_width=True)
 
+    st.write("")
     dfm_var = dfm[['year', selected_indicator,'section name']]
     dfm_var = dfm_var.pivot(index='year', columns='section name', values=selected_indicator)
     dfm_var = dfm[['year', selected_indicator,'section name']]
