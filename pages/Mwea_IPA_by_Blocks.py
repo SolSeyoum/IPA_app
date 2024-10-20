@@ -216,24 +216,29 @@ with col[1]:
  
 
     if selected_year > dfm['year'].min():
-        first_section_name = df_indicator_difference_sorted['block'].iloc[0]
-        first_section_name_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[0])
-        first_section_name_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[0])
+        first_block = df_indicator_difference_sorted['block'].iloc[0]
+        first_block_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[0])
+        first_block_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[0])
+
+        sec_name = dfm.loc[dfm['block'] == first_block, 'section name'].iloc[0]
+        first_block = f'{first_block} in {sec_name}'
     else:
-        first_section_name = '-'
-        first_section_name_indicator = '-'
-        first_section_name_delta = ''
-    st.metric(label=first_section_name, value=first_section_name_indicator, delta=first_section_name_delta)
+        first_block = '-'
+        first_block_indicator = '-'
+        first_block_delta = ''
+    st.metric(label=first_block, value=first_block_indicator, delta=first_block_delta)
 
     if selected_year > dfm['year'].min():
-        last_first_section_name = df_indicator_difference_sorted['block'].iloc[-1]
-        last_section_name_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[-1])   
-        last_section_name_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[-1])   
+        last_block = df_indicator_difference_sorted['block'].iloc[-1]
+        last_block_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[-1])   
+        last_block_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[-1])  
+        sec_name = dfm.loc[dfm['block'] == last_block, 'section name'].iloc[0]
+        last_block = f'{last_block} in {sec_name}' 
     else:
-        last_first_section_name = '-'
-        last_section_name_indicator = '-'
-        last_section_name_delta = ''
-    st.metric(label=last_first_section_name, value=last_section_name_indicator, delta=last_section_name_delta)
+        last_block = '-'
+        last_block_indicator = '-'
+        last_block_delta = ''
+    st.metric(label=last_block, value=last_block_indicator, delta=last_block_delta)
 
 
 with col[0]:
