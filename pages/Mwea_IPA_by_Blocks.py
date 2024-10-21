@@ -181,8 +181,13 @@ def make_Choroplethmapbox(geo, df, year, unit ):
   
 # histogram plot
 def make_alt_chart(df, indicator, section):
-    title = alt.TitleParams(f'Average {selected_indicator} per block for years'
-                            f' {df.year.iloc[0]} to {df.year.iloc[-1]}', anchor='start')
+    title = alt.TitleParams(text = f'Average {selected_indicator} per block for years'
+                                   f' {df.year.iloc[0]} to {df.year.iloc[-1]}',
+                                        subtitle = f'Section: {section}',
+                                        subtitleFontSize = 18, 
+                                        subtitleColor = '#FFFF80',
+                                        fontSize = 16, fontWeight = 'bold', subtitleFontWeight = 'bold'
+                                        )
     chart = alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X('block:N', axis=None),
         y=f'{indicator}:Q',
