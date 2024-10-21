@@ -237,7 +237,7 @@ with col[0]:
     
     units = {'beneficial fraction':'-', 'crop water deficit': '-',
        'relative water deficit': '-', 'total seasonal biomass production': 'ton',
-       'seasonal yield': 'ton/ha', 'crop water productivity': 'kg/m<sup>3</sup>'}
+       'seasonal yield': 'ton/ha', 'crop water productivity': 'kg\m<sup>3</sup>'}
 
     choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
     st.plotly_chart(choropleth, use_container_width=True)
