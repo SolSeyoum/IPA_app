@@ -11,7 +11,7 @@ from PIL import Image
 # Page configuration
 st.set_page_config(
     page_title="Mwea Irrigation Scheme Irrigation Performance Indicators by Block Dashboard",
-    page_icon="👈",
+    page_icon="⭐👈",
     layout="wide",
     initial_sidebar_state="expanded")
 
@@ -72,10 +72,9 @@ img[data-testid="stLogo"] {
 
 #######################
 # Load data
-dfm = pd.read_csv(r'data/IPI_by_section_and_blocks_Mwea_Kenya.csv')
-with open(r'data/Mwea_blocks.json') as response:
+dfm = pd.read_csv(r'data/Mwea_IPA_stat_by_blocks.csv')
+with open(r'data\Mwea_blocks.json') as response:
     geo = json.load(response)
-dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
 logo_wide = r'data/logo_wide.png'
 logo_small = r'data/logo_small.png'
 
@@ -94,7 +93,7 @@ IPA_description = {
             factor and above ground over total biomass production ratio (AOT) \
                 ${\\footnotesize Yiled = TBP*HI*AOT*f_c/(1-MC)}$",
     "crop water productivity": "crop water productivity (CWP) is the seasonal yield per the amount of water \
-        consumed in ${\\footnotesize kg/m^3}$"
+        consumed in ${kg/m^3}$"
 
 }
 # @st.cache_data(ttl=300)
@@ -121,25 +120,36 @@ with st.sidebar:
     st.title('Mwea Irrigation Performance Indicators')
    
     year_list = list(dfm.year.unique())[::-1]
-    indicator_list = list(dfm.columns.unique())[1:-2][::-1]
+    ll = list(dfm.columns.unique())[3:][::-1]
+    indicator_lst = [' '.join(l.split('_')[:-1]) for l in ll]
     
     selected_year = st.selectbox('Select a year', year_list)
 
-    selected_indicator = st.selectbox('Select an indicator', indicator_list)
-    st.write(IPA_description[selected_indicator])
-   
-    df_selected = dfm[dfm.year == selected_year][['section name', selected_indicator, "block"]]
-    df_selected_sorted = df_selected.sort_values(by=selected_indicator, ascending=False)
+    indicator = st.selectbox('Select an indicator', set(indicator_lst))
+    selected_stat = st.selectbox('Select a statistics', ['Average','Minimum', 'Maximum', 'Standard deviation'])
+    st.write(f'{IPA_description[indicator]}')
+    
+    stat_dict = {'Standard deviation':'std', 'Minimum': 'min', 'Maximum':'max', 'Average':'mean'}
+    selected_stat_abbr = stat_dict[selected_stat]
+    selected_indicator = f'{indicator.replace(' ', '_')}_{selected_stat_abbr}'
+    df_block = dfm[dfm.year == selected_year][['section_name', "block", selected_indicator]]
+    df_block = df_block.sort_values(by=selected_indicator, ascending=False)
 
 #######################
 
 # Plots
+def indicator_title(indicator):
+    stat_dict = {'std':'Standard deviation', 'min':'Minimum', 'max':'Maximum', 'mean':'Average'}
+    lst = indicator.split('_')
+    t1 = ' '.join(lst[:-1])
+    t2 = f"{stat_dict[lst[-1]]} of {t1}" 
+    return t1,t2
 
 # Choropleth map
-def make_Choroplethmapbox(geo, df, year, unit ):
-    # Geographic Map
-    col_name = df.columns[1]
-    df['indicator'] = col_name
+def make_Choroplethmapbox(geo, indicator, df, year, unit ):
+    ylable, text = indicator_title(indicator)
+    col_name = df.columns[2]
+    df['indicator'] = ylable
     fig = px.choropleth_mapbox(df,  # dataframe to plothangi veri seti
                                 geojson=geo,  # the geolocation
                                 locations=df['block'],
@@ -154,19 +164,19 @@ def make_Choroplethmapbox(geo, df, year, unit ):
                                 template='plotly_dark',
                                 zoom=10.7,  # zoom level
                                 opacity=0.9,  # opacity
-                                custom_data=[df['section name'],
+                                custom_data=[df['section_name'],
                                             df[col_name], 
                                             df['block'],
                                             df['indicator']] ,
                                 width=600, height=400,
                                 )
-    fig.update_layout(title=f"Mapa of {col_name} for year {year}",
+    fig.update_layout(title=f"Mapa of {text} for year {year}",
                         # title_x=0.5  # Title position
                         )
     # colrbar configuration
     fig.update_layout(
                         # coloraxis_colorbar_x=0.95,
-                        coloraxis_colorbar_title=f'{col_name} [{unit}]', 
+                        coloraxis_colorbar_title=f'{ylable} [{unit}]', 
                         coloraxis_colorbar_title_side="right",
                         coloraxis_colorbar_thickness=15,
                     )
@@ -181,16 +191,18 @@ def make_Choroplethmapbox(geo, df, year, unit ):
   
 # histogram plot
 def make_alt_chart(df, indicator, section):
-    title = alt.TitleParams(text = f'Average {selected_indicator} per block for years'
+    ylable, text = indicator_title(indicator)
+    title = alt.TitleParams(text = f'{text} per block for years'
                                    f' {df.year.iloc[0]} to {df.year.iloc[-1]}',
                                         subtitle = f'Section: {section}',
                                         subtitleFontSize = 18, 
                                         subtitleColor = '#FFFF80',
                                         fontSize = 16, fontWeight = 'bold', subtitleFontWeight = 'bold'
                                         )
+
     chart = alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X('block:N', axis=None),
-        y=f'{indicator}:Q',
+        y=alt.Y(f'{indicator}:Q', title=ylable),
         color='block:N',
         column='year:N'
     ).properties(width=100, height=120).configure_legend(
@@ -210,9 +222,18 @@ def calculate_idicator_difference(input_df, indicator, input_year):
   selected_year_data['indicator_difference'] = selected_year_data[indicator].sub(previous_year_data[indicator], fill_value=0)
   return pd.concat([selected_year_data['block'], selected_year_data[indicator], selected_year_data.indicator_difference], axis=1).sort_values(by="indicator_difference", ascending=False)
 
+
+def history_df(df1, df2, idx_col):
+    d2 = df1.pivot(index=idx_col, columns='year', values=selected_indicator).reset_index()
+    d4 = df2.merge(d2, on=idx_col, how = 'inner')
+    d4[d4.columns[2:]]= d4[d4.columns[2:]].round(2)
+    d4['history'] = d4[d4.columns[2:]].values.tolist()
+    d4 = d4.drop(columns = d4.columns[2:-1])
+    return d4.round(2)
+
 #######################
 # Dashboard Main Panel
-col = st.columns((4.5, 1.0, 2), gap='medium')
+col = st.columns((4, 1.0, 2.5), gap='medium')
 
 with col[1]:
     st.markdown('###### Gains/Losses from previous year')
@@ -226,7 +247,7 @@ with col[1]:
         first_block_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[0])
         first_block_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[0])
 
-        sec_name = dfm.loc[dfm['block'] == first_block, 'section name'].iloc[0]
+        sec_name = dfm.loc[dfm['block'] == first_block, 'section_name'].iloc[0]
         first_block = f'{first_block} in {sec_name}'
     else:
         first_block = '-'
@@ -238,7 +259,7 @@ with col[1]:
         last_block = df_indicator_difference_sorted['block'].iloc[-1]
         last_block_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[-1])   
         last_block_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[-1])  
-        sec_name = dfm.loc[dfm['block'] == last_block, 'section name'].iloc[0]
+        sec_name = dfm.loc[dfm['block'] == last_block, 'section_name'].iloc[0]
         last_block = f'{last_block} in {sec_name}' 
     else:
         last_block = '-'
@@ -254,13 +275,13 @@ with col[0]:
        'relative water deficit': '-', 'total seasonal biomass production': 'ton',
        'seasonal yield': 'ton/ha', 'crop water productivity': 'kg/m<sup>3</sup>'}
 
-    choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
+    choropleth = make_Choroplethmapbox(geo, selected_indicator, df_block, selected_year, units[indicator] )
     st.plotly_chart(choropleth, use_container_width=True)
 
     st.write("")
-    dfm_var = dfm[['year', selected_indicator,'section name', 'block']]
-    for section in dfm_var['section name'].unique():
-        df_section = dfm_var.loc[dfm_var['section name'] == section]
+    dfm_var = dfm[['year', selected_indicator,'section_name', 'block']]
+    for section in dfm_var['section_name'].unique():
+        df_section = dfm_var.loc[dfm_var['section_name'] == section]
         chart = make_alt_chart(df_section, selected_indicator, section)
         st.altair_chart(chart, use_container_width=False)
     
@@ -268,20 +289,30 @@ with col[0]:
 with col[2]:
     st.markdown('###### Indictaor ranked')
 
-    st.dataframe(df_selected_sorted,
-                 column_order=("block", selected_indicator),
-                 hide_index=True,
-                 width=None,
+    ylable, text = indicator_title(selected_indicator)
+    st.write(ylable)
+    df1 = dfm[['year', 'block', selected_indicator]]
+    df2 = df_block[['block', selected_indicator]]
+    df = history_df(df1, df2, 'block')
+   
+    ymin = df.history.apply(lambda x: min(x)).min()
+    ymax = df.history.apply(lambda x: max(x)).max()
+    st.dataframe(df,
                  column_config={
                     "block": st.column_config.TextColumn(
                         "Name",
                     ),
-                    selected_indicator: st.column_config.ProgressColumn(
-                        selected_indicator,
-                        format="%.2f",
-                        min_value=0,
-                        max_value=max(df_selected_sorted[selected_indicator]),
-                     )}
+                    selected_indicator: st.column_config.NumberColumn(
+                    "Value",
+                    help="value of the indicator for the selected year",
+                    ),
+                    "history": st.column_config.BarChartColumn(
+                        "values since 2018", y_min=0.5*ymin, y_max=ymax,
+                     help="value of the indicator for the years since 2018",   
+                    )
+                     },
+                       hide_index=True,
+                     
                  )
     
     with st.expander('About', expanded=False):
