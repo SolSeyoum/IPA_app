@@ -11,7 +11,7 @@ from PIL import Image
 # Page configuration
 st.set_page_config(
     page_title="Mwea Irrigation Scheme Irrigation Performance Indicators by Sections Dashboard",
-    page_icon="🏂",
+    page_icon="⭐",
     layout="wide",
     initial_sidebar_state="expanded")
 
@@ -62,23 +62,22 @@ st.markdown("""
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
 }
-
+            
 img[data-testid="stLogo"] {
             height: 4.5rem;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
 #######################
 # Load data
-dfm = pd.read_csv(r'data/IPI_by_section_Mwea_Kenya.csv')
-with open(r'data/Mwea.json') as response:
+dfm = pd.read_csv(r'data/Mwea_IPA_stat_by_blocks.csv')
+with open(r'data\Mwea_blocks.json') as response:
     geo = json.load(response)
 
-dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
-logo_wide = r'data/logo_wide.png'
-logo_small = r'data/logo_small.png'
+# dfm.columns = [x.replace('_', ' ') for x in dfm.columns]
+logo_wide = r'data\logo_wide.png'
+logo_small = r'data\logo_small.png'
 
 IPA_description = {
     "beneficial fraction": "Beneficial fraction (BF) is the ratio of the water that is consumed as transpiration\
@@ -121,74 +120,114 @@ with st.sidebar:
     st.title('Mwea Irrigation Performance Indicators')
 
     year_list = list(dfm.year.unique())[::-1]
-    indicator_list = list(dfm.columns.unique())[1:-1][::-1]
+    ll = list(dfm.columns.unique())[3:][::-1]
+    indicator_lst = [' '.join(l.split('_')[:-1]) for l in ll]
+
     
     selected_year = st.selectbox('Select a year', year_list)
-    selected_indicator = st.selectbox('Select an indicator', indicator_list)
-    st.write(IPA_description[selected_indicator])
+    indicator = st.selectbox('Select an indicator', set(indicator_lst))
+    selected_indicator = f'{indicator.replace(' ', '_')}_mean'
+    st.write(IPA_description[indicator])
    
-    df_selected = dfm[dfm.year == selected_year][['section name', selected_indicator]]
+    df_selected = dfm[dfm.year == selected_year][['section_name', selected_indicator]]
     df_selected_sorted = df_selected.sort_values(by=selected_indicator, ascending=False)
+
+    #aggregate by section
+    df_section=df_selected_sorted.groupby('section_name').agg({selected_indicator:'mean'})#.rename(columns=d)
+    df_section = df_section.sort_values(by=selected_indicator, ascending=False).reset_index()
 
 #######################
 
 # Plots
 
+def indicator_title(indicator):
+    stat_dict = {'std':'Standard deviation', 'min':'Minimum', 'max':'Maximum', 'mean':'Average'}
+    lst = indicator.split('_')
+    t1 = ' '.join(lst[:-1])
+    t2 = f"{stat_dict[lst[-1]]} of {t1}" 
+    return t1,t2
+
+# merge block polygons to sections
+def merge_blocks_to_sections(geo, df_section):
+    from shapely.geometry import Polygon, mapping
+    from shapely.ops import unary_union
+
+    new_features = []
+    for i, name in enumerate(df_section.section_name):
+        polygons = []
+        to_combine = [f for f in geo["features"] if f["properties"]["section_name"]==name]
+        # print(name)
+
+        for feat in to_combine:
+            lst = feat['geometry']['coordinates'][0]
+            if isinstance(lst[0][0], list): # check if the geometry is 2d or 3d list
+                lst = [e for sl in lst for e in sl]
+            polygon = Polygon([ (coor[0], coor[1]) for coor in  lst ])
+            polygons.append(polygon)
+
+        new_geometry = mapping(unary_union(polygons)) # This line merges the polygones
+        new_feature = dict(type='Feature', id=i, properties=dict(section_name=name),
+                        geometry=dict(type=new_geometry['type'], 
+                                        coordinates=new_geometry['coordinates']))
+        new_features.append(new_feature)
+    sections = dict(type='FeatureCollection', 
+                    crs= dict(type='name', properties=dict(name='urn:ogc:def:crs:OGC:1.3:CRS84')), 
+                    features=new_features)
+    return sections
+
 # Choropleth map
-def make_Choroplethmapbox(geo, df, year, unit ):
-    col_name = df.columns[1]
-    df['indicator'] = col_name
-    fig = px.choropleth_mapbox(df,  # dataframe to plothangi veri seti
-                                geojson=geo,  # the geolocation
-                                locations=df['section name'],
-                                featureidkey="properties.section_name",
-                                color=col_name,  
-                                color_continuous_scale="Viridis",  #
-                                range_color=(df[col_name].min(),
-                                            df[col_name].max()),
-                                
-                                center={"lat": -0.69306, "lon":  37.35908},
-                                mapbox_style="carto-darkmatter",  # mapbox style
-                                template='plotly_dark',
-                                zoom=10.7,  # zoom level
-                                    opacity=0.9,  # opacity
-                                    custom_data=[df['section name'],
-                                                df[col_name], 
-                                                # df['block'],
-                                                df['indicator']] ,
-                                    width=600, height=400,
-                                    )
-    fig.update_layout(title=f"Mapa of {col_name} for year {year}",
-                            # title_x=0.5  # Title position
+def make_Choroplethmapbox(geo, indicator, df, year, unit ):
+  ylable, text = indicator_title(indicator)
+  col_name = df.columns[0]
+  df['indicator'] = ylable
+  fig = px.choropleth_mapbox(df,  # dataframe to plothangi veri seti
+                            geojson=geo,  # the geolocation
+                            locations=df[col_name],
+                            featureidkey=f"properties.{col_name}",
+                            color=df[indicator],  
+                            color_continuous_scale="Viridis",  #
+                            range_color=(df[indicator].min(),
+                                          df[indicator].max()),
+                            center={"lat": -0.69306, "lon":  37.35908},
+                            mapbox_style="carto-darkmatter",  # mapbox style
+                            template='plotly_dark',
+                            zoom=10.7,  # zoom level
+                            opacity=0.9,  # opacity
+                            custom_data=[df[col_name],
+                                          df[indicator], 
+                                          df['indicator']] ,
+                              width=600, height=400,
                             )
-        # colrbar configuration
-    fig.update_layout(
-                            # coloraxis_colorbar_x=0.95,
-                            coloraxis_colorbar_title=f'{col_name} [{unit}]', 
-                            coloraxis_colorbar_title_side="right",
-                            coloraxis_colorbar_thickness=15,
-                        )
-        # hver template
-    hovertemp = '<i style="color:white;">Section:</i><b> %{customdata[0]}</b><br>'
-    hovertemp += "%{customdata[2]}: %{customdata[1]:,.2f}<br>"
-    fig.update_traces(hovertemplate=hovertemp)
-    fig.update_layout(margin={"r":0, "l":0, "b":0})
-    return fig
+  fig.update_layout(title=f"Map of {text} for year {year}",
+                    title_x=0.5  # Title position
+                    )
+  # colrbar configuration
+  fig.update_layout(
+                      # coloraxis_colorbar_x=0.95,
+                    coloraxis_colorbar_title=f'{ylable} [{unit}]', 
+                    coloraxis_colorbar_title_side="right",
+                    coloraxis_colorbar_thickness=15,
+                  )
+  # hver template
+  hovertemp = '<i style="color:white;">Section:</i><b> %{customdata[0]}</b><br>'
+  hovertemp += "%{customdata[2]}: %{customdata[1]:,.2f}<br>"
+  fig.update_traces(hovertemplate=hovertemp)
+  fig.update_layout(margin={"r":0, "l":0, "b":0})
+  return fig
 
 # histogram plot
-def maek_barchart(df,col):
-    title = alt.TitleParams(f'Average {selected_indicator} per section for years'
-                            f' {df.year.iloc[0]} to {df.year.iloc[-1]}', anchor='start')
+def make_alt_chart(df,indicator):
+    ylable, text = indicator_title(indicator)
+    title = alt.TitleParams(f'Yearly {text} by section', anchor='middle')
     barchart = alt.Chart(df, title=title).mark_bar().encode(
-        x=alt.X('section name:N', axis=None),
-        y=f'{col}:Q',
-        color='section name:N',
+        x=alt.X('section_name:N', axis=None),
+        y=alt.Y(f'{indicator}:Q', title=ylable),
+        color='section_name:N',
         column='year:N'
     ).properties(width=80, height=120).configure_legend(
         orient='bottom'
     )
     return barchart
-
 
 def format_number(num):
     return f"{num:.2f}"
@@ -198,21 +237,30 @@ def calculate_indicator_difference(input_df, indicator, input_year):
   selected_year_data = input_df[input_df['year'] == input_year].reset_index()
   previous_year_data = input_df[input_df['year'] == input_year - 1].reset_index()
   selected_year_data['indicator_difference'] = selected_year_data[indicator].sub(previous_year_data[indicator], fill_value=0)
-  return pd.concat([selected_year_data['section name'], selected_year_data[indicator], selected_year_data.indicator_difference], axis=1).sort_values(by="indicator_difference", ascending=False)
+  return pd.concat([selected_year_data['section_name'], selected_year_data[indicator], selected_year_data.indicator_difference], axis=1).sort_values(by="indicator_difference", ascending=False)
 
+
+def history_df(df1, df2, idx_col):
+    d2 = df1.pivot(index=idx_col, columns='year', values=selected_indicator).reset_index()
+    d3 = df2.groupby(idx_col).agg({selected_indicator:'mean'}).reset_index()
+    d4 = d3.merge(d2, on=idx_col, how = 'inner')
+    d4[d4.columns[2:]]= d4[d4.columns[2:]].round(2)
+    d4['history'] = d4[d4.columns[2:]].values.tolist()
+    d4 = d4.drop(columns = d4.columns[2:-1])
+    return d4.round(2)
 
 #######################
 # Dashboard Main Panel
-col = st.columns((4.5, 1.0, 2), gap='medium')
+col = st.columns((4, 1.0, 2.5), gap='medium')
 
 with col[1]:
     st.markdown('###### Gains/Losses from previous year')
 
-    input_df = dfm[['year','section name', selected_indicator]]
+    input_df = dfm[['year','section_name', selected_indicator]]
     df_indicator_difference_sorted = calculate_indicator_difference(input_df, selected_indicator, selected_year)
 
     if selected_year > dfm['year'].min():
-        first_section_name = df_indicator_difference_sorted['section name'].iloc[0]
+        first_section_name = df_indicator_difference_sorted['section_name'].iloc[0]
         first_section_name_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[0])
         first_section_name_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[0])
     else:
@@ -222,7 +270,7 @@ with col[1]:
     st.metric(label=first_section_name, value=first_section_name_indicator, delta=first_section_name_delta)
 
     if selected_year > dfm['year'].min():
-        last_first_section_name = df_indicator_difference_sorted['section name'].iloc[-1]
+        last_first_section_name = df_indicator_difference_sorted['section_name'].iloc[-1]
         last_section_name_indicator = format_number(df_indicator_difference_sorted[selected_indicator].iloc[-1])   
         last_section_name_delta = format_number(df_indicator_difference_sorted.indicator_difference.iloc[-1])   
     else:
@@ -238,38 +286,47 @@ with col[0]:
     units = {'beneficial fraction':'-', 'crop water deficit': '-',
        'relative water deficit': '-', 'total seasonal biomass production': 'ton',
        'seasonal yield': 'ton/ha', 'crop water productivity': 'kg/m<sup>3</sup>'}
+    
 
-    choropleth = make_Choroplethmapbox(geo, df_selected, selected_year, units[selected_indicator] )
+    sections = merge_blocks_to_sections(geo, df_section)
+    choropleth = make_Choroplethmapbox(sections,selected_indicator, df_section, selected_year, units[indicator] )
     st.plotly_chart(choropleth, use_container_width=True)
 
     st.write("")
-    dfm_var = dfm[['year', selected_indicator,'section name']]
-    dfm_var = dfm_var.pivot(index='year', columns='section name', values=selected_indicator)
-    dfm_var = dfm[['year', selected_indicator,'section name']]
+    dfm_var = dfm[['year','section_name', selected_indicator]].groupby(['year','section_name'])
+    dfm_var = dfm_var.agg({selected_indicator:'mean'}).reset_index()
     
-    bar_chart = maek_barchart(dfm_var, selected_indicator)
+    bar_chart = make_alt_chart(dfm_var, selected_indicator)
     st.altair_chart(bar_chart, use_container_width=False)
     
 
 with col[2]:
     st.markdown('###### Indictaor ranked')
+  
+    ylable, text = indicator_title(selected_indicator)
+    st.write(ylable)
 
-    st.dataframe(df_selected_sorted,
-                 column_order=("section name", selected_indicator),
-                 hide_index=True,
-                 width=None,
+    df = history_df(dfm_var, df_section, 'section_name')
+    ymin = df.history.apply(lambda x: min(x)).min()
+    ymax = df.history.apply(lambda x: max(x)).max()
+    st.dataframe(df,
                  column_config={
-                    "section name": st.column_config.TextColumn(
+                    "section_name": st.column_config.TextColumn(
                         "Name",
                     ),
-                    selected_indicator: st.column_config.ProgressColumn(
-                        selected_indicator,
-                        format="%.2f",
-                        min_value=0,
-                        max_value=max(df_selected_sorted[selected_indicator]),
-                     )}
+                    selected_indicator: st.column_config.NumberColumn(
+                    "Value",
+                    help="value of the indicator for the selected year",
+                    ),
+                    "history": st.column_config.BarChartColumn(
+                        "values since 2018", y_min=0.5*ymin, y_max=ymax,
+                     help="value of the indicator for the years since 2018",   
+                    )
+                     },
+                       hide_index=True,
+                     
                  )
-    
+       
     with st.expander('About', expanded=True):
         st.write('''
             - Irrigation Performance Indicators are calcukated from data: [FAO WaPOR data](https://www.fao.org/in-action/remote-sensing-for-water-productivity/wapor-data/en).
