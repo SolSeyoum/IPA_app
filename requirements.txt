@@ -3,4 +3,5 @@ pandas
 altair
 plotly
 Pillow
+shapely
 
