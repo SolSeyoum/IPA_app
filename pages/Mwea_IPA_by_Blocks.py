@@ -73,7 +73,7 @@ img[data-testid="stLogo"] {
 #######################
 # Load data
 dfm = pd.read_csv(r'data/Mwea_IPA_stat_by_blocks.csv')
-with open(r'data\Mwea_blocks.json') as response:
+with open(r'data/Mwea_blocks.json') as response:
     geo = json.load(response)
 logo_wide = r'data/logo_wide.png'
 logo_small = r'data/logo_small.png'
