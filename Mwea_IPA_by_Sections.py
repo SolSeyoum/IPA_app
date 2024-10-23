@@ -7,6 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 from PIL import Image
+from shapely.geometry import Polygon, mapping
+from shapely.ops import unary_union
 #######################
 # Page configuration
 st.set_page_config(
@@ -149,9 +151,6 @@ def indicator_title(indicator):
 
 # merge block polygons to sections
 def merge_blocks_to_sections(geo, df_section):
-    from shapely.geometry import Polygon, mapping
-    from shapely.ops import unary_union
-
     new_features = []
     for i, name in enumerate(df_section.section_name):
         polygons = []
