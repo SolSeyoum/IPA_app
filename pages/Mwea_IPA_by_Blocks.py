@@ -79,22 +79,32 @@ logo_wide = r'data/logo_wide.png'
 logo_small = r'data/logo_small.png'
 
 IPA_description = {
-    "beneficial fraction": "Beneficial fraction (BF) is the ratio of the water that is consumed as transpiration\
+    "beneficial fraction": ":blue[Beneficial fraction (BF)] is the ratio of the water that is consumed as transpiration\
          compared to overall field water consumption (ETa). ${\\footnotesize BF = T_a/ET_a}$. \
          It is a measure of the efficiency of on farm water and agronomic practices in use of water for crop growth.",
-    "crop water deficit": "crop water deficit (CWD) is measure of adequacy and calculated as the ration of seasonal\
+    "crop water deficit": ":blue[crop water deficit (CWD)] is measure of adequacy and calculated as the ration of seasonal\
         evapotranspiration to potential or reference evapotranspiration ${\\footnotesize CWD= ET_a/ET_p}$",
-    "relative water deficit": "relative water deficit (RWD) is also a measure of adequacy which is 1 minus crop water\
+    "relative water deficit": ":blue[relative water deficit (RWD)] is also a measure of adequacy which is 1 minus crop water\
           deficit ${\\footnotesize RWD= 1-ET_a/ET_p}$",
-    "total seasonal biomass production": "total seasonal biomass production (TBP) is total biomass produced in tons. \
-        ${\\footnotesize TBP = NPP * 22.222) / 1000}$",
-    "seasonal yield": "seasonal yield is the yield in a season which is crop specific and calculated using \
+    "total seasonal biomass production": ":blue[total seasonal biomass production (TBP)] is total biomass produced in tons. \
+        ${\\footnotesize TBP = (NPP * 22.222) / 1000}$",
+    "seasonal yield": ":blue[seasonal yield] is the yield in a season which is crop specific and calculated using \
         the TBP and yield factors such as moisture content, harvest index, light use efficiency correction \
             factor and above ground over total biomass production ratio (AOT) \
                 ${\\footnotesize Yiled = TBP*HI*AOT*f_c/(1-MC)}$",
-    "crop water productivity": "crop water productivity (CWP) is the seasonal yield per the amount of water \
+    "crop water productivity": ":blue[crop water productivity (CWP)] is the seasonal yield per the amount of water \
         consumed in ${kg/m^3}$"
 
+}
+stat_description = {
+    "Average":"The :blue[Average] shows the ${\\textit {mean}}$ of the values of the selected indicator of all the grid cells (20m by 20m)\
+          contained in each block", 
+    "Maximum":"The :blue[Maximum] shows the ${\\textit maximum}$ value of the selected indicator from all the values of grid cells (20m by 20m)\
+          contained in each block", 
+    "Minimum":"The :blue[Minimum] shows the ${\\textit minimum}$ value of the selected indicator from all the values of grid cells (20m by 20m)\
+          contained in each block", 
+    "Standard deviation":"The :blue[Standard deviation] shows the ${\\textit standard deviation}$ of the values of the selected indicator of all the grid \
+        cells (20m by 20m) contained in each block", 
 }
 # @st.cache_data(ttl=300)
 def load_image(image_name: str) -> Image:
@@ -128,6 +138,7 @@ with st.sidebar:
     indicator = st.selectbox('Select an indicator', set(indicator_lst))
     selected_stat = st.selectbox('Select a statistics', ['Average','Minimum', 'Maximum', 'Standard deviation'])
     st.write(f'{IPA_description[indicator]}')
+    st.write(f'{stat_description[selected_stat]}')
     
     stat_dict = {'Standard deviation':'std', 'Minimum': 'min', 'Maximum':'max', 'Average':'mean'}
     selected_stat_abbr = stat_dict[selected_stat]
