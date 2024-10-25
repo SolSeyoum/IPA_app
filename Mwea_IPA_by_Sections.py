@@ -82,23 +82,23 @@ logo_wide = r'data/logo_wide.png'
 logo_small = r'data/logo_small.png'
 
 IPA_description = {
-    "beneficial fraction": "Beneficial fraction (BF) is the ratio of the water that is consumed as transpiration\
+    "beneficial fraction": ":blue[Beneficial fraction (BF)] is the ratio of the water that is consumed as transpiration\
          compared to overall field water consumption (ETa). ${\\footnotesize BF = T_a/ET_a}$. \
          It is a measure of the efficiency of on farm water and agronomic practices in use of water for crop growth.",
-    "crop water deficit": "crop water deficit (CWD) is measure of adequacy and calculated as the ration of seasonal\
+    "crop water deficit": ":blue[crop water deficit (CWD)] is measure of adequacy and calculated as the ration of seasonal\
         evapotranspiration to potential or reference evapotranspiration ${\\footnotesize CWD= ET_a/ET_p}$",
-    "relative water deficit": "relative water deficit (RWD) is also a measure of adequacy which is 1 minus crop water\
+    "relative water deficit": ":blue[relative water deficit (RWD)] is also a measure of adequacy which is 1 minus crop water\
           deficit ${\\footnotesize RWD= 1-ET_a/ET_p}$",
-    "total seasonal biomass production": "total seasonal biomass production (TBP) is total biomass produced in tons. \
-        ${\\footnotesize TBP = NPP * 22.222) / 1000}$",
-    "seasonal yield": "seasonal yield is the yield in a season which is crop specific and calculated using \
+    "total seasonal biomass production": ":blue[total seasonal biomass production (TBP)] is total biomass produced in tons. \
+        ${\\footnotesize TBP = (NPP * 22.222) / 1000}$",
+    "seasonal yield": ":blue[seasonal yield] is the yield in a season which is crop specific and calculated using \
         the TBP and yield factors such as moisture content, harvest index, light use efficiency correction \
             factor and above ground over total biomass production ratio (AOT) \
                 ${\\footnotesize Yiled = TBP*HI*AOT*f_c/(1-MC)}$",
-    "crop water productivity": "crop water productivity (CWP) is the seasonal yield per the amount of water \
-        consumed in ${\\footnotesize kg/m^3}$"
-
+    "crop water productivity": ":blue[crop water productivity (CWP)] is the seasonal yield per the amount of water \
+        consumed in ${kg/m^3}$"
 }
+
 # @st.cache_data(ttl=300)
 def load_image(image_name: str) -> Image:
     """Displays an image.
@@ -129,7 +129,7 @@ with st.sidebar:
     selected_year = st.selectbox('Select a year', year_list)
     indicator = st.selectbox('Select an indicator', set(indicator_lst))
     selected_indicator = f'{indicator.replace(' ', '_')}_mean'
-    st.write(IPA_description[indicator])
+    st.write(f'{IPA_description[indicator]}')
    
     df_selected = dfm[dfm.year == selected_year][['section_name', selected_indicator]]
     df_selected_sorted = df_selected.sort_values(by=selected_indicator, ascending=False)
