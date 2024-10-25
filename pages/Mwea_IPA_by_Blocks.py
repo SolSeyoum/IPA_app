@@ -203,6 +203,10 @@ def make_Choroplethmapbox(geo, indicator, df, year, unit ):
 # histogram plot
 def make_alt_chart(df, indicator, section):
     ylable, text = indicator_title(indicator)
+    w = ylable.split()
+    if(len(w)%2):
+        w.append ("")
+    ylable = [' '.join((w[2*i], w[2*i+1]))  for i in range(len(w)//2)]
     title = alt.TitleParams(text = f'{text} per block for years'
                                    f' {df.year.iloc[0]} to {df.year.iloc[-1]}',
                                         subtitle = f'Section: {section}',
