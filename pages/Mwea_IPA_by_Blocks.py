@@ -220,7 +220,7 @@ def make_alt_chart(df, indicator, section):
         y=alt.Y(f'{indicator}:Q', title=ylable),
         color='block:N',
         column='year:N'
-    ).properties(width=100, height=120).configure_legend(
+    ).properties(width=100, height=80).configure_legend(
         orient='bottom',
         columns=15
     )
