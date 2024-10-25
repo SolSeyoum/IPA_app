@@ -227,7 +227,7 @@ def make_alt_chart(df,indicator):
         y=alt.Y(f'{indicator}:Q', title=ylable),
         color='section_name:N',
         column='year:N'
-    ).properties(width=80, height=120).configure_legend(
+    ).properties(width=80, height=80).configure_legend(
         orient='bottom'
     )
     return barchart
