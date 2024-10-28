@@ -11,7 +11,7 @@ from PIL import Image
 # Page configuration
 st.set_page_config(
     page_title="Mwea Irrigation Scheme Irrigation Performance Indicators by Block Dashboard",
-    page_icon="⭐👈",
+    page_icon="📈🌿",
     layout="wide",
     initial_sidebar_state="expanded")
 
@@ -318,11 +318,11 @@ with col[2]:
                         "Name",
                     ),
                     selected_indicator: st.column_config.NumberColumn(
-                    "Value",
+                    f"⭐{selected_year}",
                     help="value of the indicator for the selected year",
                     ),
-                    "history": st.column_config.BarChartColumn(
-                        "values since 2018", y_min=0.5*ymin, y_max=ymax,
+                    "history": st.column_config.LineChartColumn(
+                        "values since 2018", y_min=ymin, y_max=ymax,
                      help="value of the indicator for the years since 2018",   
                     )
                      },
