@@ -70,6 +70,15 @@ img[data-testid="stLogo"] {
 </style>
 """, unsafe_allow_html=True)
 
+hide_github_icon = """
+<style>
+    #GithubIcon {
+      visibility: hidden;
+    }
+</style>
+"""
+st.markdown(hide_github_icon, unsafe_allow_html=True)
+
 #######################
 # Load data
 dfm = pd.read_csv(r'data/Mwea_IPA_stat_by_blocks.csv')
