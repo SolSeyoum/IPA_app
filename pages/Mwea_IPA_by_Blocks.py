@@ -75,10 +75,6 @@ img[data-testid="stLogo"] {
             height: 4.5rem;
 }
 
-#GithubIcon {
-      visibility: hidden;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
