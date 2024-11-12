@@ -72,7 +72,7 @@ img[data-testid="stLogo"] {
 }
 
 </style>
-""",hide_github_icon, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 #######################
 # Load data
