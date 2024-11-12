@@ -67,17 +67,12 @@ img[data-testid="stLogo"] {
             height: 4.5rem;
 }
 
-</style>
-""", unsafe_allow_html=True)
-
-hide_github_icon = """
-<style>
-    #GithubIcon {
+#GithubIcon {
       visibility: hidden;
-    }
+}
+
 </style>
-"""
-st.markdown(hide_github_icon, unsafe_allow_html=True)
+""",hide_github_icon, unsafe_allow_html=True)
 
 #######################
 # Load data
