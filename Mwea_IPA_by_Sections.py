@@ -191,7 +191,7 @@ def make_Choroplethmapbox(geo, indicator, df, year, unit ):
                             center={"lat": -0.69306, "lon":  37.35908},
                             mapbox_style="carto-darkmatter",  # mapbox style
                             template='plotly_dark',
-                            zoom=10.5,  # zoom level
+                            zoom=10.3,  # zoom level
                             opacity=0.9,  # opacity
                             custom_data=[df[col_name],
                                           df[indicator], 
