@@ -199,7 +199,7 @@ def make_Choroplethmapbox(geo, indicator, df, year, unit ):
                               width=600, height=400,
                             )
   fig.update_layout(title=f"Map of {text} for year {year}",
-                    title_x=0.5  # Title position
+                    title_x=0.2  # Title position
                     )
   # colrbar configuration
   fig.update_layout(
